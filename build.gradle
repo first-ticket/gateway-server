@@ -23,7 +23,7 @@ ext {
 
 dependencies {
 	// Reactive Gateway (WebFlux/Netty 기반) - MVC 버전(gateway-server-webmvc)과 혼용 불가
-	implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+	implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webflux'
 	// Eureka Client — lb://service-name 방식 라우팅 지원 (LoadBalancer 포함)
 	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 	// Keycloak JWT 서명 검증 (Spring Security Reactive 포함)
