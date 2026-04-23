@@ -42,8 +42,29 @@ public class AuthorizationHeaderFilter implements GlobalFilter, Ordered {
     // realm_access 맵 내부에서 역할 목록을 담는 키
     private static final String ROLES_KEY = "roles";
 
+    // 보안 민감 Header 상수 - 제거·주입 위치에서 동일 문자열 사용 보장
+    private static final String HEADER_USER_ID = "X-User-Id";
+    private static final String HEADER_USER_ROLE = "X-User-Role";
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+
+        // 모든 요청에서 보안 헤더를 먼저 제거
+        // 이유: 악의적인 클라이언트가 X-User-Id, X-User-Role을 임의로 심어 보낼 경우
+        // 다운스트림 서비스가 이를 신뢰하는 헤더 스푸핑 공격을 차단하기 위함
+        // 공개 경로(signup, login)에서도 제거 - switchIfEmpty 분기에서 별도 처리 불필요
+        ServerHttpRequest sanitizedRequest = exchange.getRequest().mutate()
+                .headers(headers -> {
+                    headers.remove(HEADER_USER_ID);    // 클라이언트가 위조한 헤더 제거
+                    headers.remove(HEADER_USER_ROLE);  // 클라이언트가 위조한 헤더 제거
+                })
+                .build();
+
+        // 제거된 요청으로 교환 객체 재구성 - 이후 모든 분기에서 이 객체를 기준으로 사용
+        ServerWebExchange sanitizedExchange = exchange.mutate().request(sanitizedRequest).build();
+
+
+
         return ReactiveSecurityContextHolder.getContext()
                 // SecurityContext에서 Authentication 꺼내기
                 .map(SecurityContext::getAuthentication)
@@ -60,16 +81,16 @@ public class AuthorizationHeaderFilter implements GlobalFilter, Ordered {
 
                     // 원본 요청을 변경 불가능(Immutable)하므로 mutate()로 새 요청 생성
                     // 헤더 주입 구간
-                    ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                            .header("X-User-Id", userId)     // 다운스트림 서비스가 사용자 식별에 사용
-                            .header("X-User-Role", roles)    // 다운스트림 서비스가 권한 검증에 사용
+                    ServerHttpRequest mutatedRequest = sanitizedExchange.getRequest().mutate()
+                            .header(HEADER_USER_ID, userId)     // 다운스트림 서비스가 사용자 식별에 사용
+                            .header(HEADER_USER_ROLE, roles)    // 다운스트림 서비스가 권한 검증에 사용
                             .build();
 
                     // 변경된 요청으로 교환 객체를 다시 빌드해 다음 필터로 전달
-                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                    return chain.filter(sanitizedExchange.mutate().request(mutatedRequest).build());
                 })
                 // JWT가 없는 요청(공개 경로) - 헤더 추가 없이 그대로 통과
-                .switchIfEmpty(chain.filter(exchange));
+                .switchIfEmpty(chain.filter(sanitizedExchange));
     }
 
     /**
@@ -82,7 +103,7 @@ public class AuthorizationHeaderFilter implements GlobalFilter, Ordered {
         Map<String, Object> realmAccess = auth.getToken().getClaim(REALM_ACCESS_CLAIM);
 
         if (realmAccess == null || !realmAccess.containsKey(ROLES_KEY)) {
-            return "";  // 역할 클레임 없음 — 빈 문자열로 다운스트림 전달
+            return "";  // 역할 클레임 없음 - 빈 문자열로 다운스트림 전달
         }
 
         // Keycloak이 역할을 List<String>으로 제공
