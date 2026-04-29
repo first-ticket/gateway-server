@@ -1,11 +1,16 @@
 package com.firstticket.gatewayserver.config;
 
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.server.resource.web.server.authentication.ServerBearerTokenAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+
+import reactor.core.publisher.Mono;
 
 // Gateway는 WebFlux 기반이므로 @EnableWebFluxSecurity 사용
 @Configuration
@@ -23,6 +28,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        // PUBLIC_PATHS 요청에서는 Authorization 헤더를 무시
+        ServerBearerTokenAuthenticationConverter delegate =
+            new ServerBearerTokenAuthenticationConverter();
+
         return http
                 // Gateway는 REST API 서버이므로 CSRF비활성화
                 // SameSite 쿠키 전략으로 대체
@@ -39,6 +48,14 @@ public class SecurityConfig {
                 // application.yml의 jwk-set-uri를 사용해 Keycloak 공개키로 JWT 서명 검증
                 // 검증 성공 시 JwtAuthenticationToken이 SecurityContext에 저장됨
                 .oauth2ResourceServer(oauth2 -> oauth2
+                    .bearerTokenConverter(exchange -> {
+                        String path = exchange.getRequest().getPath().value();
+                        boolean isPublic = Arrays.asList(PUBLIC_PATHS).contains(path);
+                        if (isPublic) {
+                            return Mono.empty(); // 토큰 파싱 스킵
+                        }
+                        return delegate.convert(exchange);
+                    })
                         .jwt(Customizer.withDefaults())
                 )
 
