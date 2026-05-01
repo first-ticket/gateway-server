@@ -49,7 +49,7 @@ spring:
             - id: booking-service
               uri: lb://booking-service
               predicates:
-                - Path=/api/v1/bookings/**, /api/v1/tickets/**, /api/v1/admin/bookings/**
+                - Path=/api/v1/bookings/**, /api/v1/tickets/**, /api/v1/admin/bookings/**, /api/v1/seats/**
 
             - id: payment-service
               uri: lb://payment-service
@@ -60,11 +60,6 @@ spring:
               uri: lb://queue-service
               predicates:
                 - Path=/api/v1/queues/**, /api/v1/admin/queues/**
-
-            - id: seat-service
-              uri: lb://seat-service
-              predicates:
-                - Path=/api/v1/seats/**
 
 eureka:
   client:
