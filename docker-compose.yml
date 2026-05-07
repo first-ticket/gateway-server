@@ -1,0 +1,47 @@
+# gateway-server/docker-compose.yml
+services:
+  gateway-server:
+    build:
+      context: .  # Dockerfile이 있는 디렉터리 (gateway-server/)
+      dockerfile: Dockerfile
+    # 컨테이너 이름 - docker ps에서 식별자로 사용
+    container_name: first-ticket-gateway
+
+    # 호스트 80 -> 컨테이너 8080
+    # Spring Boot는 내부적으로 8080, 외부에는 표준 HTTP 포트 80으로 노출
+    ports:
+      - "80:8080"
+
+    environment:
+      # 활성 프로파일 - .env에 없으면 prod로 기동
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+
+      # Eureka 서버 호스트명 — Docker 네트워크 내에서 컨테이너명으로 통신
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL:-eureka-server}
+
+      # Config Server Basic Auth 인증정보 - .env에서 주입
+      CONFIG_SERVER_USERNAME: ${CONFIG_SERVER_USERNAME}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+
+      # Zipkin 분산 트레이싱 수집 엔드포인트
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+
+    # actuator/health 엔드포인트로 컨테이너 상태 확인
+    # start_period: Spring Boot 기동 시간 확보 (Config Server 연결 포함)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+    # 비정상 종료 시 자동 재시작 (수동 중지 시에는 재시작 안 함)
+    restart: unless-stopped
+
+    networks:
+      - first-ticket-network
+
+networks:
+  first-ticket-network:
+    external: true  # 이 docker-compose가 네트워크를 생성하지 않고, 기존 network 참조
+    name: first-ticket-network
