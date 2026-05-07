@@ -193,14 +193,3 @@ CLOSED (정상) → [실패율 ≥ 50%] → OPEN (차단, fallback 반환)
   "data": { "service": "user-service" }
 }
 ```
-
----
-
-## 참고 문서
-
-| 문서 | 경로 |
-|---|---|
-| 아키텍처 개요 | `docs/architecture/overview.md` |
-| 인프라 구성 | `docs/architecture/infra.md` |
-| API 명세 | `docs/api/api.md` |
-| Git 브랜치 전략 | `docs/conventions/git-branching.md` |
