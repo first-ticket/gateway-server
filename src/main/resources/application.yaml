@@ -10,15 +10,20 @@ spring:
 
   profiles:
     # 운영 배포 시: SPRING_PROFILES_ACTIVE=prod → gateway-server-prod.yml 로드
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    # 기본값 dev: IntelliJ에서 별도 환경변수 지정 없을 때 로컬 개발 프로파일로 기동
+    active: ${SPRING_PROFILES_ACTIVE}
 
   config:
     # Config Server 주소 - 환경변수 {CONFIG_SERVER_URI} 로 Override
     # 'optional:' 접두사가 있으면 Config Server가 꺼져 있어도 임시 변수로 활용
     # 운영 환경에서는 optional: 제거하고 fail-fast: true 로 함께 사용하는 식으로 수정 예정
     import:
+      # .env 파일에서 환경변수 로드 (Working Dir = gateway-server/ 일 때)
+      # IntelliJ Run Configuration → Working directory: $MODULE_WORKING_DIR$ 설정 필요
       - "optional:file:.env[.properties]"
-      - "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+      # URL 없이 Eureka 디스커버리로 Config Server를 탐색
+      # spring.cloud.config.discovery.enabled: true 가 활성화되어야 동작
+      - "optional:configserver:"
 
   cloud:
     config:
@@ -34,9 +39,22 @@ spring:
       # .env 환경변수로 주입
       username: ${CONFIG_SERVER_USERNAME}
       password: ${CONFIG_SERVER_PASSWORD}
+      discovery:
+        enabled: true
+        service-id: config-server
 
-# Config Server 연결 시도 로그 확인용.
-# Config 로드 전에는 config-repo 로깅 설정이 아직 적용되지 않으므로 여기서 지정.
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      # EUREKA_SERVER_URL 환경변수 없으면 localhost:8761로 폴백
+      defaultZone: http://${EUREKA_SERVER_URL:localhost}:8761/eureka/
+
 logging:
   level:
+    # Config Server 연결 시도 로그 확인용
+    # Config 로드 전에는 config-repo 로깅 설정이 아직 적용되지 않으므로 여기서 지정
     org.springframework.cloud.config: INFO
