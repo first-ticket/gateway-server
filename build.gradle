@@ -13,6 +13,18 @@ java {
 	}
 }
 
+// .env 파일 읽기
+def env = [:]
+def envFile = rootProject.file(".env")
+if (envFile.exists()) {
+	envFile.eachLine { line ->
+		if (line && !line.startsWith("#") && line.contains("=")) {
+			def (key, value) = line.split("=", 2)
+			env[key.trim()] = value.trim()
+		}
+	}
+}
+
 repositories {
 	mavenCentral()
 }

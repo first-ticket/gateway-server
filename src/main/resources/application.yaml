@@ -8,11 +8,17 @@ spring:
     # config-repo 에서 gateway-server.yml 또는 gateway-server-{profile}.yml 을 가져옴
     name: gateway-server
 
+  profiles:
+    # 운영 배포 시: SPRING_PROFILES_ACTIVE=prod → gateway-server-prod.yml 로드
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
   config:
     # Config Server 주소 - 환경변수 {CONFIG_SERVER_URI} 로 Override
     # 'optional:' 접두사가 있으면 Config Server가 꺼져 있어도 임시 변수로 활용
     # 운영 환경에서는 optional: 제거하고 fail-fast: true 로 함께 사용하는 식으로 수정 예정
-    import: "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
 
   cloud:
     config:
@@ -24,6 +30,10 @@ spring:
         initial-interval: 1000  # 첫 재시도 대기 시간 (ms)
         max-attempts: 5         # 최대 재시도 횟수
         max-interval: 2000      # 재시도 간격 상한 (ms)
+      # Config Server Basic Auth 인증정보
+      # .env 환경변수로 주입
+      username: ${CONFIG_SERVER_USERNAME}
+      password: ${CONFIG_SERVER_PASSWORD}
 
 # Config Server 연결 시도 로그 확인용.
 # Config 로드 전에는 config-repo 로깅 설정이 아직 적용되지 않으므로 여기서 지정.
