@@ -1,78 +1,32 @@
-server:
-  # 로컬 기본 포트 8080
-  # ECS 환경에서는 ALB가 :80 → Task :8080으로 포워딩하므로 변경 불필요
-  port: 8080
+# 20260507 - gateway-server 환경설정을 config-repo에 이관합니다
+# 서비스 내 application.yaml (여기)에는 config server에 연결하기 위한 최소 정보만 포함시킵니다.
+# 모든 실질적인 설정값은 config-repo/gateway-server를 참고해주세요
 
 spring:
   application:
-    name: gateway-server   # Eureka에 등록될 서비스 이름
+    # Eureka 등록 이름 / config-repo 파일 식별자
+    # config-repo 에서 gateway-server.yml 또는 gateway-server-{profile}.yml 을 가져옴
+    name: gateway-server
 
-  jackson:
-    # Jackson JSON 직렬화 시 사용할 타임존 설정
-    # 에러 응답 timestamp, LocalDateTime 직렬화 등에 적용됨
-    time-zone: Asia/Seoul
-
-    serialization:
-      # true: 1745123456789 (epoch millis) 형태로 출력
-      # false: "2026-04-23T14:40:19.076+09:00" 문자열 형태로 출력
-      write-dates-as-timestamps: false
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          # jwk-set-uri: 애플리케이션 시작 시 즉시 Keycloak에 연결하지 않고
-          # 첫 번째 JWT 검증 요청이 들어올 때 Lazy하게 JWKS를 가져옴 (issuer-uri는 Eager → Keycloak 미기동 시 startup 실패)
-          # 환경변수 KEYCLOAK_JWK_SET_URI 로 오버라이드 가능
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/first-ticket/protocol/openid-connect/certs}
+  config:
+    # Config Server 주소 - 환경변수 {CONFIG_SERVER_URI} 로 Override
+    # 'optional:' 접두사가 있으면 Config Server가 꺼져 있어도 임시 변수로 활용
+    # 운영 환경에서는 optional: 제거하고 fail-fast: true 로 함께 사용하는 식으로 수정 예정
+    import: "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
 
   cloud:
-    gateway:
-      server:
-        webflux:
-          routes:
-            - id: user-service
-              uri: lb://user-service
-              predicates:
-                - Path=/api/v1/auth/**, /api/v1/users/**, /api/v1/admin/users/**, /api/v1/admin/host-requests/**
+    config:
+      # Config Server 연결 실패 시 앱 기동 실패 처리 (운영 권장: true).
+      fail-fast: false  # 로컬 개발 중에는 false, 운영 배포 시 true 로 변경
 
-            - id: program-service
-              uri: lb://program-service
-              predicates:
-                - Path=/api/v1/programs/**
+      # Config Server 연결 재시도 설정 (Eureka·Config Server 기동 순서 차이 대비)
+      retry:
+        initial-interval: 1000  # 첫 재시도 대기 시간 (ms)
+        max-attempts: 5         # 최대 재시도 횟수
+        max-interval: 2000      # 재시도 간격 상한 (ms)
 
-            - id: venue-service
-              uri: lb://venue-service
-              predicates:
-                - Path=/api/v1/venues/**
-
-            - id: booking-service
-              uri: lb://booking-service
-              predicates:
-                - Path=/api/v1/bookings/**, /api/v1/tickets/**, /api/v1/admin/bookings/**, /api/v1/seats/**
-
-            - id: payment-service
-              uri: lb://payment-service
-              predicates:
-                - Path=/api/v1/payments/**, /api/v1/admin/payments/**
-
-            - id: queue-service
-              uri: lb://queue-service
-              predicates:
-                - Path=/api/v1/queues/**, /api/v1/admin/queues/**
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
-    tls:
-      enabled: false   # Spring Cloud 2025.0.x TlsProperties 바인딩 버그 workaround (eureka-server와 동일)
-  instance:
-    prefer-ip-address: true   # ECS Fargate — hostname 대신 컨테이너 IP를 Eureka에 등록
-
-management:
-  endpoints:
-    web:
-      exposure:
-        # 운영 환경: 환경변수로 prometheus 추가 (MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus)
-        include: health, info
+# Config Server 연결 시도 로그 확인용.
+# Config 로드 전에는 config-repo 로깅 설정이 아직 적용되지 않으므로 여기서 지정.
+logging:
+  level:
+    org.springframework.cloud.config: INFO
