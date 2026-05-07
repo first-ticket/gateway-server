@@ -86,7 +86,7 @@ JWT 검증 후 클레임에서 사용자 정보를 추출해 다운스트림 서
 
 ### 환경변수 설정 (`.env`)
 
-루트에 .env 파일 생성 후 설정
+Run Configuration에서 Environment Variables를 주입합니다.
 
 ```dotenv
 # Config Server 인증
@@ -96,12 +96,12 @@ CONFIG_SERVER_PASSWORD=admin1234
 # Config Server 주소
 CONFIG_SERVER_URL=http://localhost:8888
 
+# Eureka Server URL
+EUREKA_SERVER_URL=localhost
+
 # 실행 프로파일 (dev | prod)
 SPRING_PROFILES_ACTIVE=dev
 ```
-
-> Spring Boot가 `optional:file:.env[.properties]` 방식으로 `.env`를 직접 로드합니다.
-> IntelliJ Run Configuration에 별도 환경변수를 등록할 필요가 없습니다.
 
 ### 실행
 
