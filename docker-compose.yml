@@ -30,6 +30,10 @@ services:
       # spring.security.oauth2.resourceserver.jwt.jwk-set-uri 자동 매핑
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI}
 
+      # Redis 연결 - Config Server dev 설정(localhost)을 컨테이너 내부 주소로 오버라이드
+      # spring.data.redis.host 자동 매핑
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST:-first-ticket-redis}
+
     # actuator/health 엔드포인트로 컨테이너 상태 확인
     # start_period: Spring Boot 기동 시간 확보 (Config Server 연결 포함)
     healthcheck:
