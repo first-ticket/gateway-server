@@ -11,7 +11,7 @@ spring:
   profiles:
     # 운영 배포 시: SPRING_PROFILES_ACTIVE=prod → gateway-server-prod.yml 로드
     # 기본값 dev: IntelliJ에서 별도 환경변수 지정 없을 때 로컬 개발 프로파일로 기동
-    active: ${SPRING_PROFILES_ACTIVE}
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   config:
     # Config Server 주소 - 환경변수 {CONFIG_SERVER_URI} 로 Override
@@ -28,12 +28,12 @@ spring:
   cloud:
     config:
       # Config Server 연결 실패 시 앱 기동 실패 처리 (운영 권장: true).
-      fail-fast: false  # 로컬 개발 중에는 false, 운영 배포 시 true 로 변경
+      fail-fast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:false}
 
       # Config Server 연결 재시도 설정 (Eureka·Config Server 기동 순서 차이 대비)
       retry:
         initial-interval: 1000  # 첫 재시도 대기 시간 (ms)
-        max-attempts: 5         # 최대 재시도 횟수
+        max-attempts: 6         # 최대 재시도 횟수
         max-interval: 2000      # 재시도 간격 상한 (ms)
       # Config Server Basic Auth 인증정보
       # .env 환경변수로 주입
