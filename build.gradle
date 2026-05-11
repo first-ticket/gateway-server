@@ -63,6 +63,12 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
+	// Spring Cache + Caffeine - Spring Cloud LoadBalancer 캐시 백엔드
+	// 미추가 시 default cache 사용 (TTL 35초 고정, 설정 불가)
+	// 추가 시 spring.cloud.loadbalancer.cache.ttl 로 TTL 제어 가능
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
