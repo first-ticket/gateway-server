@@ -1,0 +1,46 @@
+# gateway-server/docker-compose.prod.yml
+# AWS 배포용 docker-compose - ECR 이미지 pull
+# 필요한 .env 항목:
+#   GATEWAY_IMAGE, CONFIG_SERVER_USERNAME, CONFIG_SERVER_PASSWORD
+#   KEYCLOAK_JWK_SET_URI, REDIS_HOST, EUREKA_DEFAULT_ZONE
+services:
+  gateway-server:
+    image: ${GATEWAY_IMAGE}
+    container_name: first-ticket-gateway
+    ports:
+      - "80:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Eureka
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL:-eureka-server}
+      EUREKA_DEFAULT_ZONE: http://${EUREKA_SERVER_URL:-eureka-server}:8761/eureka/
+
+      # Config Server
+      CONFIG_SERVER_USERNAME: ${CONFIG_SERVER_USERNAME}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+      SPRING_CLOUD_CONFIG_FAIL_FAST: "true"
+
+      # Keycloak JWK URI — prod.yml의 ${KEYCLOAK_JWK_SET_URI} 참조 대상
+      KEYCLOAK_JWK_SET_URI: ${KEYCLOAK_JWK_SET_URI}
+
+      # Redis
+      REDIS_HOST: ${REDIS_HOST:-first-ticket-redis}
+
+      # Zipkin
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - first-ticket-network
+
+networks:
+  first-ticket-network:
+    external: true
+    name: first-ticket-network
