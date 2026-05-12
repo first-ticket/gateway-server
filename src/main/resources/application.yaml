@@ -26,6 +26,14 @@ spring:
       - "optional:configserver:"
 
   cloud:
+    # ECS Fargate 환경에서 Spring Cloud InetUtils가 잘못된 IP(169.254.172.2, ECS Metadata Endpoint)를 자기 IP로 인식하여 Eureka에 등록하는 문제 해결.
+    # RFC1918 사설 IP 대역(10.x, 172.x, 192.168.x)을 우선 선택하도록 강제.
+    inetutils:
+      preferred-networks:
+        - 10\.
+        - 172\.
+        - 192\.168\.
+
     config:
       # Config Server 연결 실패 시 앱 기동 실패 처리 (운영 권장: true).
       fail-fast: ${SPRING_CLOUD_CONFIG_FAIL_FAST:false}
@@ -42,6 +50,7 @@ spring:
       discovery:
         enabled: true
         service-id: config-server
+
 
 eureka:
   instance:
