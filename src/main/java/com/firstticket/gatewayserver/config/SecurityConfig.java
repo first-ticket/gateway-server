@@ -22,6 +22,9 @@ public class SecurityConfig {
             "/api/v1/auth/signup",           // 회원가입 - 토큰 불필요
             "/api/v1/auth/login",            // 로그인 - 토큰 불필요
             "/api/v1/auth/token/refresh",    // 토큰 재발급 - Refresh Token을 Body로 전달
+            "/api/v1/payments/payment-page", // 결제창 URI
+            "/api/v1/payments/confirm-redirect", // 결제 redirect URI
+            "/api/v1/payments/fail",         // 결제 실패 URI
             "/actuator/health",              // 헬스체크 - ALB 타겟 그룹 헬스체크용
             "/actuator/info",                // 서비스 정보
             "/actuator/prometheus",          // Prometheus 메트릭 수집 - 인증 없이 scrap 허용
