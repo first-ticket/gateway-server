@@ -91,3 +91,16 @@ jobs:
         run: |
           echo "✅ Pushed: $ECR_REPOSITORY:${{ github.sha }}"
           echo "✅ Pushed: $ECR_REPOSITORY:latest"
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition gateway-server \
+            --query taskDefinition > task-definition.json
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: task-definition.json
+          service: gateway-server-service
+          cluster: first-ticket-cluster
+          wait-for-service-stability: false
