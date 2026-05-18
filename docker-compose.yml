@@ -10,16 +10,12 @@ services:
       - "80:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8080
       EUREKA_SERVER_URL: eureka-server
-
       CONFIG_SERVER_USERNAME: ${CONFIG_SERVER_USERNAME}
       CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
-
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://first-ticket-keycloak:8080/realms/first-ticket/protocol/openid-connect/certs
-
       SPRING_DATA_REDIS_HOST: first-ticket-redis
-
       ZIPKIN_ENDPOINT: http://first-ticket-zipkin:9411/api/v2/spans
 
     healthcheck:
