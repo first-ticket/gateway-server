@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -22,6 +23,9 @@ public class SecurityConfig {
             "/api/v1/auth/signup",           // 회원가입 - 토큰 불필요
             "/api/v1/auth/login",            // 로그인 - 토큰 불필요
             "/api/v1/auth/token/refresh",    // 토큰 재발급 - Refresh Token을 Body로 전달
+            "/api/v1/payments/payment-page",    // 토스 결제창
+            "/api/v1/payments/fail",            // 결제 실패 콜백 (PG사 리다이렉트)
+            "/api/v1/payments/confirm-redirect",// 결제 성공 콜백 (PG사 리다이렉트)
             "/actuator/health",              // 헬스체크 - ALB 타겟 그룹 헬스체크용
             "/actuator/info",                // 서비스 정보
             "/actuator/prometheus",          // Prometheus 메트릭 수집 - 인증 없이 scrap 허용
@@ -40,6 +44,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
 
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // 공개 경로는 인증 없이 허용
                         .pathMatchers(PUBLIC_PATHS).permitAll()
                         // 그 외 모든 요청은 JWT 필수
